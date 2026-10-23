@@ -1,0 +1,233 @@
+/* =====================================================================
+   DASHBOARD POLISH — user / staff / super admin panels
+   Loaded after styles.css. One consistent header, stat-card, chart-grid,
+   table and card system across all three dashboards.
+   ===================================================================== */
+/* Entrance animations must not keep a transform active after they finish ("both" / "forwards").
+   A lingering transform turns .page into the containing block for position:fixed, which trapped every
+   modal / job pop-up inside the page area (clipped at the top), and it also blocked the cards' hover lift. */
+.page { animation-fill-mode: backwards }
+.stat, .box, .job, .scard, .arow, .paybox, .arrival { animation-fill-mode: backwards }
+
+.desk-only { display: flex }
+.panel { grid-template-columns: 264px minmax(0, 1fr) }
+
+/* ---------- sidebar (desktop) ---------- */
+@media (min-width: 901px) {
+  .side { padding: 24px 16px 18px; box-shadow: 1px 0 0 var(--line) }
+  .side .logo { padding: 0 12px 2px }
+  .side .role { padding: 0 12px 20px; margin-bottom: 4px }
+  .side nav { padding-right: 2px; overflow-x: hidden }
+  .side nav button { min-width: 0 }
+  .side nav button { padding: 12px; gap: 10px; margin-bottom: 4px; line-height: 1.2; white-space: nowrap }
+  .side nav button .chip { margin-left: auto; min-width: 22px; text-align: center }
+  .side .me { padding: 16px 4px 0 }
+  .me-row { display: flex; align-items: center; gap: 12px; min-width: 0 }
+  .me-av { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: var(--tint2); color: var(--pink); display: grid; place-items: center; font-weight: 800; text-transform: uppercase }
+  .me-txt { min-width: 0; display: grid; line-height: 1.3 }
+  .side .me .me-txt b, .side .me .me-txt span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+  .side .me .me-txt span { color: var(--mute); font-size: 12px }
+
+}
+
+/* ---------- top bar (desktop): breadcrumb left, bell right ---------- */
+@media (min-width: 901px) {
+  .main { padding: 0 36px 40px }
+  .mainbar { position: sticky; top: 0; z-index: 40; margin: 0 -36px 26px; padding: 0 36px; min-height: 68px; justify-content: flex-start; gap: 12px;
+    background: rgba(247, 247, 249, .88); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line) }
+  .pcrumb { align-items: center; gap: 6px; font-size: 14px; color: var(--mute); font-weight: 500 }
+  .pcrumb b { color: var(--head); font-weight: 700 }
+  .pcrumb .ic { color: #b4b4c0 }
+}
+@media (max-width: 900px) { .desk-only { display: none } }
+
+/* ---------- page header: title + subtitle left, actions right (same in all 3 panels) ---------- */
+.main h1 { line-height: 1.2; letter-spacing: -.8px }
+@media (min-width: 901px) { .main h1 { font-size: 28px } }
+.main .lead { margin: 4px 0 24px; font-size: 15px; line-height: 1.5 }
+.topbar { align-items: flex-start; gap: 14px 20px; margin-bottom: 0 }
+.topbar > div:first-child { min-width: 0 }
+.topbar > .actions { justify-content: flex-end; align-self: center; flex-shrink: 0 }
+.topbar > .btn { align-self: center; flex-shrink: 0 }
+.box .topbar { align-items: center; margin-bottom: 0 }
+.box .topbar h3 { margin: 0 }
+.actions { gap: 8px }
+.actions .tabs { margin: 0 }
+.actions select { width: auto; min-width: 170px; padding-top: 9px; padding-bottom: 9px }
+
+/* staff online switch */
+.online-pill { display: inline-flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 7px 8px 7px 16px; align-self: center; flex-shrink: 0; box-shadow: 0 1px 2px rgba(17, 24, 39, .04) }
+.online-pill i { width: 9px; height: 9px; border-radius: 50%; background: #b4b4c0 }
+.online-pill b { font-size: 14px; color: var(--mute); min-width: 46px }
+.online-pill.on i { background: var(--ok); box-shadow: 0 0 0 4px rgba(22, 163, 74, .16) }
+.online-pill.on b { color: var(--ok) }
+
+/* ---------- stat cards: label + icon on one row, value below (no overlap with long labels) ---------- */
+.stats { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px }
+.stat { grid-column: span 3; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'label icon' 'value value'; align-items: start; column-gap: 12px; row-gap: 10px; padding: 18px 20px; min-height: 112px }
+.stat small { grid-area: label; font-size: 13px; line-height: 1.35; align-self: center; padding-top: 2px }
+.stat .si { grid-area: icon; position: static; width: 40px; height: 40px; border-radius: 12px }
+.stat b { grid-area: value; margin: 0; font-size: 30px; line-height: 1.1; align-self: end; white-space: nowrap }
+
+/* wide screens: fill every row evenly instead of leaving orphan cards */
+@media (min-width: 1241px) {
+  .stats:has(> .stat:nth-child(1):last-child) .stat { grid-column: span 4 }
+  .stats:has(> .stat:nth-child(2):last-child) .stat { grid-column: span 6 }
+  .stats:has(> .stat:nth-child(3):last-child) .stat,
+  .stats:has(> .stat:nth-child(6):last-child) .stat,
+  .stats:has(> .stat:nth-child(9):last-child) .stat { grid-column: span 4 }
+  .stats:has(> .stat:nth-child(5):last-child) .stat { grid-column: span 4 }
+  .stats:has(> .stat:nth-child(5):last-child) .stat:nth-child(n+4) { grid-column: span 6 }
+  .stats:has(> .stat:nth-child(7):last-child) .stat:nth-child(n+5) { grid-column: span 4 }
+}
+/* laptop widths: rows of three, remainders paired (7 = 3+2+2, 5 = 3+2, 4 = 2+2, 8 = 3+3+2) */
+@media (max-width: 1240px) and (min-width: 901px) {
+  .stats .stat { grid-column: span 4 }
+  .stats:has(> .stat:nth-child(1):last-child) .stat,
+  .stats:has(> .stat:nth-child(2):last-child) .stat,
+  .stats:has(> .stat:nth-child(4):last-child) .stat { grid-column: span 6 }
+  .stats:has(> .stat:nth-child(5):last-child) .stat:nth-child(n+4),
+  .stats:has(> .stat:nth-child(7):last-child) .stat:nth-child(n+4),
+  .stats:has(> .stat:nth-child(8):last-child) .stat:nth-child(n+7) { grid-column: span 6 }
+}
+@media (max-width: 900px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px }
+  .stats .stat { grid-column: auto; min-height: 96px; padding: 14px; row-gap: 6px }
+  .stats > .stat:last-child:nth-child(odd) { grid-column: 1 / -1 }
+  .stat b { font-size: 24px }
+  .stat .si { width: 34px; height: 34px }
+}
+
+/* ---------- cards ---------- */
+.box { padding: 22px; margin-bottom: 20px; border-radius: 18px; box-shadow: 0 1px 2px rgba(17, 24, 39, .03) }
+.box h3 { font-size: 16px; font-weight: 700; color: var(--head); margin-bottom: 16px; letter-spacing: -.2px }
+.box.empty { padding: 44px 20px; font-size: 14px }
+/* a table that sits inside a card must not draw a second card */
+.box > .box.tablewrap { border: 0; padding: 0; margin: 0; box-shadow: none; border-radius: 0; background: transparent; animation: none }
+.box > .box.empty { border: 1.5px dashed var(--line); background: var(--soft); padding: 28px 16px; margin: 0; border-radius: 14px; animation: none }
+
+/* chart grid: two even columns on wide screens, one column below; an odd last card spans the row */
+.gridc { grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: stretch; margin-bottom: 20px }
+@media (min-width: 1240px) {
+  .gridc { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .gridc > .box:last-child:nth-child(odd) { grid-column: 1 / -1 }
+}
+.gridc > .box { display: flex; flex-direction: column; height: 100%; margin-bottom: 0 }
+.gridc > .box > h3 { flex-shrink: 0 }
+.gridc > .box > .chart { margin: auto 0; width: 100% }
+.gridc > .box > .hbars { margin: 0; width: 100% }
+.gridc > .box > .donut-wrap { margin: auto 0; width: 100% }
+.gridc > .box > .empty, .gridc > .box > .box.empty { margin: auto 0; display: grid; place-items: center; min-height: 150px; border: 1.5px dashed var(--line); border-radius: 14px; background: var(--soft); padding: 20px }
+.donut-wrap { gap: 28px; justify-content: center }
+.donut-wrap .chart { flex-shrink: 0 }
+.legend { max-width: 260px }
+.legend li { padding: 7px 0; border-bottom: 1px dashed var(--line) }
+.legend li:last-child { border-bottom: 0 }
+.hb-top { align-items: baseline }
+.fbrow { padding: 12px 0 }
+.fbrow p { margin: 6px 0 4px; line-height: 1.45 }
+.approvals { padding: 20px 22px }
+.approvals > .topbar { padding-bottom: 12px }
+.arow { padding: 14px 0; gap: 14px }
+.arow > div:nth-child(2) { min-width: 180px }
+.av { flex-shrink: 0 }
+
+/* ---------- tables ---------- */
+.box.tablewrap { padding: 4px 8px; overflow-x: auto }
+table { border-collapse: separate; border-spacing: 0 }
+th { padding: 14px; font-size: 11.5px; font-weight: 700; letter-spacing: .6px; white-space: nowrap }
+td { padding: 14px; line-height: 1.4 }
+@media (min-width: 901px) {
+  td { white-space: nowrap }
+  td[data-label="Comment"] { white-space: normal; min-width: 220px }
+  td[data-label="Menus"] { white-space: normal; min-width: 240px }
+  td[data-label="Permissions"] { text-transform: capitalize }
+}
+tbody tr:hover td { background: #fafafc }
+td small { color: var(--mute); font-size: 12.5px }
+td .t { white-space: nowrap }
+td .actions { flex-wrap: nowrap; justify-content: flex-start }
+td .btn.sm { padding: 7px 12px; white-space: nowrap }
+td .chips { gap: 6px }
+td .chip { padding: 3px 10px; font-size: 12px }
+td .stars-row { white-space: nowrap }
+.badge { padding: 4px 12px; line-height: 1.3 }
+
+/* ---------- job / order cards ---------- */
+.job { padding: 20px 22px; margin-bottom: 16px; border-radius: 18px }
+.job .head { margin-bottom: 10px }
+.job .two { gap: 24px }
+.job .actions { margin-top: 14px }
+.job p.t, .job b.t { display: flex }
+.job p.t { margin: 10px 0 }
+.job > .btn { margin-top: 14px }
+.job > .btn + .btn { margin-left: 8px }
+.job .actions input { flex: 0 1 220px; min-width: 150px; width: auto }
+.photos { margin: 10px 0 4px }
+
+/* ---------- booking picker + service / city cards ---------- */
+.svc-pick { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px }
+.pick .tx { padding: 16px }
+.pick h3 { margin: 0 0 4px }
+.pick p { min-height: 36px; margin: 0 }
+.cgrid, .sgrid { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px }
+.citybox { padding: 16px; display: flex; flex-direction: column }
+.citybox .chips { flex: 1 1 auto; align-content: flex-start }
+.citybox .actions { margin-top: 0 !important; padding-top: 0 }
+.citybox form input { padding: 9px 12px }
+.scard { display: flex; flex-direction: column }
+.stx { padding: 18px; display: flex; flex-direction: column; flex: 1 }
+.stx p { min-height: 44px }
+.stx .actions { margin-top: auto !important; padding-top: 12px; align-items: center }
+.modal { padding: 28px }
+.modal h2 { font-size: 22px; margin-bottom: 8px; letter-spacing: -.4px }
+
+/* ---------- forms + controls inside panels ---------- */
+.main input:not([type=checkbox]):not([type=file]), .main select { min-height: 50px }
+.job .actions input, .actions select, .citybox form input { min-height: 0 }
+.main form.box { padding: 24px }
+.main .form-grid { gap: 0 18px }
+.tabs button { white-space: nowrap; padding: 9px 14px }
+.actions .tabs button { padding: 7px 14px; font-size: 13px }
+.avatar { display: grid; place-items: center; flex-shrink: 0; line-height: 1 }
+.switch { flex-shrink: 0; cursor: pointer }
+.switch:disabled { opacity: .5; cursor: not-allowed }
+
+/* ---------- bell + dropdowns line up with the header ---------- */
+@media (min-width: 901px) { .bell { width: 44px; height: 44px; border-radius: 12px } .note-panel, .prof-menu { top: 56px } }
+.dot-count { border-color: #f7f7f9 }
+
+/* ---------- phones ---------- */
+@media (max-width: 900px) {
+  .main .lead { margin-bottom: 18px }
+  .topbar { gap: 10px }
+  .topbar > .actions, .topbar > .btn, .online-pill { align-self: flex-start }
+  .box.tablewrap, .box > .box.tablewrap { padding: 0 }
+  .box { padding: 16px }
+  tbody tr:hover td { background: transparent }
+  td { padding: 8px 0 }
+  td .actions { flex-wrap: wrap; justify-content: flex-end }
+  .actions select { width: 100%; min-width: 0 }
+  .actions .tabs { width: 100%; overflow-x: auto }
+  .modal { padding: 22px 18px calc(22px + env(safe-area-inset-bottom)) }
+  .gridc { grid-template-columns: minmax(0, 1fr) }
+  .svc-pick { grid-template-columns: 1fr 1fr; gap: 12px }
+  .pick p { min-height: 0 }
+  .cgrid, .sgrid { grid-template-columns: minmax(0, 1fr) }
+  .job { padding: 16px }
+}
+
+/* compact desktop (small laptops): narrower sidebar + gutters, tighter table cells (keep last so it wins) */
+@media (min-width: 901px) and (max-width: 1240px) {
+  .panel { grid-template-columns: 244px minmax(0, 1fr) }
+  .side { padding-left: 12px; padding-right: 12px }
+  .main { padding: 0 24px 36px }
+  .mainbar { margin: 0 -24px 22px; padding: 0 24px }
+  th, td { padding: 12px 7px }
+  th { letter-spacing: .3px; font-size: 11px }
+  table { font-size: 13px }
+  td .btn.sm { padding: 6px 10px }
+  .box.tablewrap { padding: 2px 6px }
+  td { white-space: normal }
+  td:first-child, td .badge, td .btn, td .t, td .actions, td .stars-row { white-space: nowrap }
+}

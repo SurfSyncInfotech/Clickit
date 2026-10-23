@@ -28,6 +28,8 @@ const CITY_IMG = {
 }
 // `custom` is a photo the admin uploaded for the city; otherwise fall back to a stock landmark photo
 export const cityImg = (name, w = 700, custom) => custom || U(CITY_IMG[name] || CITY_IMG.Bengaluru, w, Math.round(w * 0.65))
+// onError handler: if an uploaded file is missing, swap in the stock photo once instead of showing a broken image
+export const imgFallback = (stock) => (e) => { const t = e.currentTarget; if (t.dataset.fb) return; t.dataset.fb = '1'; t.src = stock }
 export const CITIES = Object.keys(CITY_IMG)
 export const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 

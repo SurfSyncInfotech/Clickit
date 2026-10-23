@@ -1,0 +1,86 @@
+/* =====================================================================
+   TOASTS + APP-LIKE MOBILE SHELL (bottom tab bar, "More" sheet, touch polish)
+   Loaded last.
+   ===================================================================== */
+
+/* ---------- toast notifications (rendered on <body> through a portal) ---------- */
+.toasts { position: fixed; top: 18px; right: 18px; z-index: 400; display: grid; gap: 10px; width: min(380px, calc(100vw - 24px)); pointer-events: none }
+.toast { position: relative; overflow: hidden; pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; background: #fff; border: 1px solid #f3dfe9; border-left: 4px solid #f4458d; border-radius: 16px; padding: 14px 40px 17px 14px;
+  box-shadow: 0 16px 44px rgba(35, 44, 90, .18); cursor: pointer; animation: toastIn .45s cubic-bezier(.2, .8, .2, 1) }
+.toast .ni { background: #ffe9f2; color: #e0488d }
+.toast-t { flex: 1; min-width: 0 }
+.toast-t b { display: block; font-size: 14px; color: #2b2f3e }
+.toast-t p { font-size: 13px; color: #6f7689; margin-top: 2px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+.toast-x { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: transparent; color: #9aa0b2; display: grid; place-items: center }
+.toast-x:hover { background: #f4f5fa; color: #2b2f3e }
+.toast-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: linear-gradient(90deg, #f8639f, #f4458d); transform-origin: left; animation: toastBar linear forwards }
+@keyframes toastBar { from { transform: scaleX(1) } to { transform: scaleX(0) } }
+.toast:hover .toast-bar { animation-play-state: paused }
+.tt-payment { border-left-color: #27b27a } .tt-payment .ni { background: #e3f6ec; color: #228a5a } .tt-payment .toast-bar { background: #27b27a }
+.tt-feedback { border-left-color: #f7b955 } .tt-feedback .ni { background: #fff3de; color: #cf8416 } .tt-feedback .toast-bar { background: #f7b955 }
+.tt-staff { border-left-color: #5eb1ef } .tt-staff .ni { background: #e5eeff; color: #3f6bc9 } .tt-staff .toast-bar { background: #5eb1ef }
+.tt-settlement { border-left-color: #9b8afb } .tt-settlement .ni { background: #efe9ff; color: #7757d9 } .tt-settlement .toast-bar { background: #9b8afb }
+@keyframes toastIn { from { opacity: 0; transform: translateX(60px) scale(.96) } to { opacity: 1; transform: none } }
+
+/* ---------- bottom tab bar: hidden on desktop ---------- */
+.appnav, .more-ov { display: none }
+
+@media (max-width: 900px) {
+  .toasts { top: calc(10px + env(safe-area-inset-top)); left: 12px; right: 12px; width: auto }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(-24px) scale(.97) } to { opacity: 1; transform: none } }
+
+  /* the desktop sidebar is replaced by the tab bar */
+  .panel .side { display: none !important }
+
+  .appnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; gap: 2px; background: rgba(255, 255, 255, .96); backdrop-filter: blur(18px);
+    border-top: 1px solid #e9ebf3; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 24px rgba(35, 44, 90, .06) }
+  .appnav button { flex: 1 1 0; min-width: 0; background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 2px; color: #8a90a2; font-size: 11px; font-weight: 600; border-radius: 14px; -webkit-user-select: none; user-select: none; touch-action: manipulation }
+  .appnav .ai, .more-grid .ai { position: relative; display: grid; place-items: center; width: 48px; height: 30px; border-radius: 15px; transition: background .2s, color .2s, transform .2s }
+  .appnav .al { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+  .appnav button.on { color: #e0357f }
+  .appnav button.on .ai { background: #ffe9f2; transform: translateY(-1px) }
+  .appnav button:active .ai { transform: scale(.92) }
+  .appnav em, .more-grid em { position: absolute; top: -5px; right: 2px; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 99px; background: #f4458d; color: #fff; font-size: 10px; font-weight: 800; font-style: normal; display: grid; place-items: center; border: 2px solid #fff }
+
+  /* "More" bottom sheet (when a role has more menus than fit in the bar) */
+  .more-ov { display: flex; align-items: flex-end; position: fixed; inset: 0; z-index: 150; background: rgba(17, 24, 39, .45); animation: fade .2s }
+  .more-sheet { width: 100%; background: #fff; border-radius: 26px 26px 0 0; padding: 10px 18px calc(20px + env(safe-area-inset-bottom)); animation: sheetUp .3s cubic-bezier(.2, .8, .2, 1); max-height: 86dvh; overflow: auto }
+  .more-sheet .grab { display: block; width: 42px; height: 5px; border-radius: 9px; background: #d9dbe6; margin: 4px auto 14px }
+  .more-me { display: flex; align-items: center; gap: 12px; padding: 4px 2px 16px; border-bottom: 1px solid #eef0f6; margin-bottom: 16px }
+  .more-me .me-av { width: 42px; height: 42px; background: #ffe6f1; color: #e0357f; border-radius: 14px; display: grid; place-items: center; font-weight: 800 }
+  .more-me b { display: block } .more-me small { color: #6f7689; word-break: break-all }
+  .more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px }
+  .more-grid button { background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 4px; border-radius: 16px; font-size: 12.5px; font-weight: 600; color: #4a5064; background: #f6f7fb; min-width: 0 }
+  .more-grid .ai { width: 54px; height: 54px; border-radius: 16px; background: #fff; color: #6f7689 }
+  .more-grid button.on { background: #fff0f6; color: #e0357f } .more-grid button.on .ai { background: #ffe1ee; color: #e0357f }
+
+  /* app bar */
+  .panel .mainbar { padding-top: calc(8px + env(safe-area-inset-top)); padding-bottom: 8px; background: rgba(255, 255, 255, .94); box-shadow: 0 1px 0 #e9ebf3 }
+  .panel .mainbar .logo { color: #f4458d }
+  .panel .main { padding-bottom: calc(92px + env(safe-area-inset-bottom)); overscroll-behavior-y: contain }
+
+  /* touch polish */
+  html { scroll-behavior: auto }
+  .btn, .appnav button, .more-grid button, .seg button, .dm, .tabs button, .pick, .switch { touch-action: manipulation }
+  .btn:active { transform: scale(.97) }
+  .panel .page { animation-duration: .28s }
+  .panel .btn.sm { min-height: 40px }
+  .actions .btn.sm, td .btn.sm { min-height: 38px }
+  .panel input, .panel select, .panel textarea { font-size: 16px }
+  .dm { min-height: 64px }
+  .panel .main h1 { font-size: 22px }
+}
+
+/* keep landscape phones and small tablets usable: allow the 2-up grid at 600-900 */
+@media (max-width: 900px) and (min-width: 600px) {
+  .dtiles, .drings { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .dsplit { grid-template-columns: auto minmax(0, 1fr); justify-items: stretch }
+  .dside { grid-template-columns: 1fr 1fr }
+}
+@media (max-width: 380px) {
+  .appnav .al { font-size: 10px }
+  .dmetrics { grid-template-columns: 1fr 1fr }
+  .dm b { font-size: 20px }
+  .dhead-t h1 { font-size: 20px }
+}
+@media (display-mode: standalone) { .panel .mainbar { padding-top: calc(10px + env(safe-area-inset-top)) } }

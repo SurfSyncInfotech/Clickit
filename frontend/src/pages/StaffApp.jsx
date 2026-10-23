@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useDB, api, session, ready, incomingFor, inr, fmt, STAFF_SHARE } from '../store.js'
 import { AuthShell, PanelLayout, Badge, Photos, useMsg } from '../components/Shared.jsx'
 import Icon, { Stars } from '../components/Icon.jsx'
-import { Count, BarChart, LineChart, Donut, HBars, lastDays, countBy, avg } from '../components/Charts.jsx'
+import { Count, HBars, PALETTE, countBy, avg } from '../components/Charts.jsx'
+import { DashHead, DGrid, Col, Side, MetricCard, Kpi, BigKpi, ListCard, SplitCard, TilesCard, RingsCard, TableCard, series, trend, rupee, share } from '../components/Analytics.jsx'
 import { IMG } from '../content.js'
 
 export default function StaffApp() {
@@ -78,10 +79,9 @@ function StaffPanel({ me, db, onLogout }) {
   const popup = incoming[0]
   return (
     <PanelLayout role="Staff panel" items={items} active={tab} onNav={setTab} me={{ name: me.name, sub: `${me.area}, ${me.city}` }} onLogout={onLogout}>
-      <div className="topbar"><h1>{items.find((i) => i.key === tab).label}</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><b style={{ color: me.online ? 'var(--ok)' : 'var(--mute)' }}>{me.online ? 'Online' : 'Offline'}</b>
-          <button className={'switch' + (me.online ? ' on' : '')} onClick={() => api.setOnline(me.id, !me.online)} /></div></div>
-      <p className="lead">{me.online ? `Waiting for requests in ${me.city}…` : 'Go online to receive job requests.'}</p>
+      {tab !== 'dashboard' && <div className="topbar"><div><h1>{items.find((i) => i.key === tab).label}</h1>
+        <p className="lead">{me.online ? `Waiting for requests in ${me.city}…` : 'Go online to receive job requests.'}</p></div>
+        <OnlinePill me={me} /></div>}
       {tab === 'dashboard' && <StaffDash me={me} db={db} mine={mine} go={setTab} />}
       {tab === 'feedback' && <StaffFeedback db={db} />}
       {tab === 'jobs' && <Jobs list={mine.filter((b) => ['accepted', 'in_progress'].includes(b.status))} />}
@@ -93,6 +93,11 @@ function StaffPanel({ me, db, onLogout }) {
   )
 }
 
+const OnlinePill = ({ me }) => (
+  <div className={'online-pill' + (me.online ? ' on' : '')}><i /><b>{me.online ? 'Online' : 'Offline'}</b>
+    <button className={'switch' + (me.online ? ' on' : '')} onClick={() => api.setOnline(me.id, !me.online)} aria-label="Toggle online" /></div>
+)
+
 function StaffDash({ me, db, mine, go }) {
   const done = mine.filter((b) => b.status === 'completed')
   const earn = (b) => Math.round(b.price * STAFF_SHARE)
@@ -100,24 +105,66 @@ function StaffDash({ me, db, mine, go }) {
   const unpaid = done.filter((b) => b.paymentStatus !== 'paid')
   const ratings = db.feedback.map((f) => f.rating)
   const active = mine.filter((b) => ['accepted', 'in_progress'].includes(b.status))
+  const valid = mine.filter((b) => b.status !== 'cancelled' && b.status !== 'requested')
+  const sumEarn = (l) => l.reduce((t, b) => t + earn(b), 0)
+  const dist = [5, 4, 3, 2, 1].map((n) => ({ label: n + ' star', value: ratings.filter((r) => r === n).length }))
+  const accepted = (b) => b.acceptedAt || b.createdAt
   return (
     <>
-      <div className="stats">
-        <div className="stat"><span className="si"><Icon name="wallet" size={20} /></span><small>Total earned</small><b><Count value={done.reduce((t, b) => t + earn(b), 0)} prefix="₹" /></b></div>
-        <div className="stat"><span className="si"><Icon name="clock" size={20} /></span><small>Ready for settlement</small><b><Count value={pending.reduce((t, b) => t + earn(b), 0)} prefix="₹" /></b></div>
-        {unpaid.length > 0 && <div className="stat"><span className="si"><Icon name="rupee" size={20} /></span><small>Awaiting customer payment</small><b><Count value={unpaid.reduce((t, b) => t + earn(b), 0)} prefix="₹" /></b></div>}
-        <div className="stat"><span className="si"><Icon name="check" size={20} /></span><small>Jobs completed</small><b><Count value={done.length} /></b></div>
-        <div className="stat"><span className="si"><Icon name="star" size={20} /></span><small>Rating</small><b><Count value={avg(ratings)} decimals={1} /></b></div>
-      </div>
+      <DashHead title={`Hi, ${me.name}!`} sub={me.online ? `You are online and waiting for requests in ${me.city}.` : 'Go online to start receiving job requests.'}
+        meta={[{ label: 'City', value: me.city }, { label: 'Area', value: me.area }, { label: 'Rating', value: ratings.length ? avg(ratings).toFixed(1) + ' / 5' : 'New' }]}>
+        <OnlinePill me={me} />
+      </DashHead>
       {active.length > 0 && <div className="box approvals"><div className="topbar"><h3><Icon name="briefcase" size={18} /> You have {active.length} active job{active.length > 1 ? 's' : ''}</h3><button className="btn sm" onClick={() => go('jobs')}>Open jobs</button></div></div>}
-      <div className="gridc">
-        <div className="box"><h3>Earnings, last 7 days</h3><BarChart data={lastDays(7, done, earn)} format={(v) => '₹' + v} /></div>
-        <div className="box"><h3>Jobs completed, last 7 days</h3><LineChart data={lastDays(7, done, () => 1)} /></div>
-        <div className="box"><h3>Jobs by service</h3>{done.length ? <Donut data={countBy(done, 'serviceName')} /> : <div className="empty">Complete jobs to see this chart.</div>}</div>
-        <div className="box"><h3>Recent feedback</h3>
-          {!db.feedback.length && <div className="empty">No feedback yet.</div>}
-          {db.feedback.slice(0, 4).map((f) => <div key={f.id} className="fbrow"><Stars n={f.rating} size={14} /><p>{f.comment || 'No comment'}</p><small>{f.customerName} · {fmt(f.createdAt)}</small></div>)}</div>
-      </div>
+
+      <DGrid>
+        <Col s={8}>
+          <MetricCard title="Earnings overview" sub="Your share of completed jobs. Click a number to change the chart." metrics={[
+            { key: 'e', label: 'Earned', list: done, pick: earn, format: rupee, prefix: '₹' },
+            { key: 'j', label: 'Jobs done', list: done, pick: () => 1 },
+            { key: 'h', label: 'Hours worked', list: done, pick: (b) => b.mins / 60, format: (v) => (Math.round(v * 10) / 10).toString() },
+            { key: 'a', label: 'Jobs accepted', list: mine, pick: () => 1, when: accepted },
+          ]} />
+        </Col>
+        <Col s={4}>
+          <Side>
+            <Kpi label="Ready for settlement" display={rupee(sumEarn(pending))} delta={trend(pending, earn)} data={series('day', pending, earn)} />
+            <Kpi label="Average rating" display={ratings.length ? avg(ratings).toFixed(1) : '0.0'} data={dist.slice().reverse()} kind="bars" color={PALETTE[3]} />
+            <BigKpi label="Total earned" display={rupee(sumEarn(done))} delta={trend(done, earn)} data={series('week', done, earn)}
+              text={`Your ${Math.round(STAFF_SHARE * 100)}% share of every completed booking, settled weekly by the admin team.`} />
+          </Side>
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={5}>
+          <ListCard title="Recent feedback" sub="What customers say about your work." empty="No feedback yet." rows={db.feedback.slice(0, 5).map((f) => ({
+            key: f.id, title: f.customerName, sub: f.comment || 'No comment', value: '★ ' + f.rating }))} />
+        </Col>
+        <Col s={7}>
+          <SplitCard title="Jobs by service" sub="The kinds of jobs you complete." data={countBy(done, 'serviceName')} empty="Complete jobs to see this chart." />
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={5}>
+          <TilesCard title="At a glance" sub="Where your money and jobs stand." tiles={[
+            { icon: 'rupee', label: 'Awaiting customer', value: rupee(sumEarn(unpaid)) },
+            { icon: 'briefcase', label: 'Active jobs', value: active.length },
+            { icon: 'wallet', label: 'Avg per job', value: rupee(done.length ? Math.round(sumEarn(done) / done.length) : 0) },
+            { icon: 'star', label: 'Reviews', value: ratings.length },
+          ]} />
+          <RingsCard title="Performance" sub="How your jobs are going." rings={[
+            { label: 'Jobs completed', pct: share(done.length, valid.length), value: `${done.length} of ${valid.length}` },
+            { label: 'Customer rating', pct: ratings.length ? (avg(ratings) / 5) * 100 : 0, value: ratings.length ? avg(ratings).toFixed(1) + ' / 5' : 'No ratings' },
+          ]} />
+        </Col>
+        <Col s={7}>
+          <TableCard title="Recent jobs" sub="Your latest jobs and what you earn." head={['Service', 'Customer', 'Date', 'You earn', 'Status']} empty="No jobs yet."
+            right={mine.length > 6 ? <button className="btn ghost sm" onClick={() => go('bookings')}>View all</button> : null}
+            rows={mine.slice(0, 6).map((b) => [<span className="t"><Icon name={b.icon} size={16} />{b.serviceName}</span>, b.customerName, fmt(b.createdAt), <b>{inr(earn(b))}</b>, <Badge s={b.status} />])} />
+        </Col>
+      </DGrid>
     </>
   )
 }
@@ -199,7 +246,10 @@ function Payout({ me, list }) {
   const sum = (l) => l.reduce((t, b) => t + Math.round(b.price * STAFF_SHARE), 0)
   return (
     <>
-      <div className="stats"><div className="stat"><small>Total earned</small><b>{inr(sum(done))}</b></div><div className="stat"><small>Pending payout</small><b>{inr(sum(pending))}</b></div><div className="stat"><small>Jobs completed</small><b>{done.length}</b></div></div>
+      <div className="stats">
+        <div className="stat"><span className="si"><Icon name="wallet" size={20} /></span><small>Total earned</small><b>{inr(sum(done))}</b></div>
+        <div className="stat"><span className="si"><Icon name="clock" size={20} /></span><small>Pending payout</small><b>{inr(sum(pending))}</b></div>
+        <div className="stat"><span className="si"><Icon name="check" size={20} /></span><small>Jobs completed</small><b>{done.length}</b></div></div>
       <Table empty="Complete jobs to see payouts." head={['Booking', 'Service', 'Completed', 'Payout', 'Customer payment', 'Settlement']}
         rows={done.map((b) => [b.id, b.serviceName, fmt(b.completedAt), inr(Math.round(b.price * STAFF_SHARE)), <PayBadge b={b} />, <Badge s={b.settled ? 'paid' : 'pending'} />])} />
     </>
@@ -210,7 +260,7 @@ function Settlement({ me, db }) {
   const rows = db.settlements.filter((s) => s.staffId === me.id)
   return (
     <>
-      <p className="lead" style={{ marginTop: -12 }}>Earnings are settled every week by the admin team ({Math.round(STAFF_SHARE * 100)}% of the booking value).</p>
+      <p className="lead">Earnings are settled every week by the admin team ({Math.round(STAFF_SHARE * 100)}% of the booking value).</p>
       <Table empty="No settlements yet." head={['Settlement', 'Date', 'Jobs', 'Gross', 'Your payout', 'Status']}
         rows={rows.map((s) => [s.id, fmt(s.createdAt), s.jobs, inr(s.gross), <b>{inr(s.payout)}</b>, <Badge s={s.status} />])} />
     </>

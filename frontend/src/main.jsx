@@ -2,6 +2,10 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './styles.css'
+import './panels.css'
+import './panels-soft.css'
+import './dash.css'
+import './mobile.css'
 import { SiteLayout } from './components/Site.jsx'
 import Home from './pages/Home.jsx'
 import { ServicePage, CityPage } from './pages/ServicePage.jsx'
@@ -31,7 +35,8 @@ createRoot(document.getElementById('root')).render(
       </Route>
       <Route path="/user/*" element={<UserApp />} />
       <Route path="/staff/*" element={<StaffApp />} />
-      <Route path="/superadmin/*" element={<AdminApp />} />
+      <Route path="/superadmin/*" element={<AdminApp mode="super" />} />
+      <Route path="/team/*" element={<AdminApp mode="team" />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   </BrowserRouter>

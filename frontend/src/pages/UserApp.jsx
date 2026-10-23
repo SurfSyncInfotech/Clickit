@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useDB, api, session, inr, fmt } from '../store.js'
 import { AuthShell, PanelLayout, Badge, Photos } from '../components/Shared.jsx'
 import Icon, { Stars } from '../components/Icon.jsx'
-import { SERVICE_PHOTO, IMG } from '../content.js'
-import { Count, BarChart, Donut, lastDays, countBy } from '../components/Charts.jsx'
+import { SERVICE_PHOTO, IMG, imgFallback } from '../content.js'
+import { PALETTE, countBy } from '../components/Charts.jsx'
+import { DashHead, DGrid, Col, Side, DCard, MetricCard, Kpi, BigKpi, SplitCard, TilesCard, RingsCard, TableCard, series, trend, rupee, share } from '../components/Analytics.jsx'
 
 const photoFor = (icon, w = 600) => (SERVICE_PHOTO[icon] || IMG.clean1)(w)
 
@@ -61,27 +62,80 @@ function UserPanel({ me, onLogout }) {
 function UserDash({ me, mine, db, go }) {
   const done = mine.filter((b) => b.status === 'completed')
   const live = mine.filter((b) => ['requested', 'accepted', 'in_progress'].includes(b.status))
-  const mins = done.reduce((t, b) => t + b.mins, 0)
   const due = done.filter((b) => b.paymentStatus === 'unpaid')
+  const paid = done.filter((b) => b.paymentStatus === 'paid')
+  const valid = mine.filter((b) => b.status !== 'cancelled')
+  const spent = done.reduce((t, b) => t + b.price, 0)
+  const hours = done.reduce((t, b) => t + b.mins, 0) / 60
+  const created = (b) => b.createdAt
+  const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   return (
     <>
-      <div className="topbar"><div><h1>Hello, {me.name}</h1><p className="lead">Your home help at a glance.</p></div><button className="btn glow" onClick={() => go('book')}>Book a service <Icon name="arrowRight" size={18} /></button></div>
-      <div className="stats">
-        <div className="stat"><span className="si"><Icon name="list" size={20} /></span><small>Total bookings</small><b><Count value={mine.length} /></b></div>
-        <div className="stat"><span className="si"><Icon name="clock" size={20} /></span><small>Active now</small><b><Count value={live.length} /></b></div>
-        <div className="stat"><span className="si"><Icon name="wallet" size={20} /></span><small>Total spent</small><b><Count value={done.reduce((t, b) => t + b.price, 0)} prefix="₹" /></b></div>
-        <div className="stat"><span className="si"><Icon name="clock" size={20} /></span><small>Hours of help</small><b><Count value={mins / 60} decimals={1} /></b></div>
-        {due.length > 0 && <div className="stat"><span className="si"><Icon name="rupee" size={20} /></span><small>Payment due</small><b style={{ color: 'var(--pink)' }}><Count value={due.reduce((t, b) => t + b.price, 0)} prefix="₹" /></b></div>}
-      </div>
-      {due.map((b) => (
-        <div key={b.id} className="box approvals"><div className="topbar"><h3 className="t"><Icon name="wallet" size={18} />Pay {inr(b.price)} for {b.serviceName} (#{b.id})</h3><button className="btn sm" onClick={() => go('orders')}>Pay now</button></div></div>))}
-      {live.map((b) => (
-        <div key={b.id} className="box approvals"><div className="topbar"><h3 className="t"><Icon name={b.icon} size={18} />{b.serviceName} <Badge s={b.status} /></h3><button className="btn ghost sm" onClick={() => go('orders')}>Track</button></div>
-          <small style={{ color: 'var(--mute)' }}>{b.status === 'requested' ? `Finding the nearest expert in ${b.city}…` : `Expert: ${db.staff.find((s) => s.id === b.staffId)?.name || 'assigned'}`}</small></div>))}
-      <div className="gridc">
-        <div className="box"><h3>Spending, last 7 days</h3><BarChart data={lastDays(7, done, (b) => b.price)} format={(v) => '₹' + v} /></div>
-        <div className="box"><h3>Bookings by service</h3>{mine.length ? <Donut data={countBy(mine, 'serviceName')} /> : <div className="empty">Book your first service to see this.</div>}</div>
-      </div>
+      <DashHead title={`Hi, ${me.name}!`} sub="Your home help at a glance."
+        meta={[{ label: 'Today', value: today }, { label: 'Active now', value: live.length }, { label: 'Payment due', value: due.length ? inr(due.reduce((t, b) => t + b.price, 0)) : 'None' }]}>
+        <button className="btn" onClick={() => go('book')}>Book a service <Icon name="arrowRight" size={18} /></button>
+      </DashHead>
+
+      <DGrid>
+        <Col s={8}>
+          <MetricCard title="My activity" sub="Your bookings, spending and time saved. Click a number to change the chart." metrics={[
+            { key: 'b', label: 'Bookings', list: mine, pick: () => 1, when: created },
+            { key: 's', label: 'Spent', list: done, pick: (b) => b.price, format: rupee, prefix: '₹' },
+            { key: 'h', label: 'Hours of help', list: done, pick: (b) => b.mins / 60, format: (v) => (Math.round(v * 10) / 10).toString() },
+            { key: 'c', label: 'Completed', list: done, pick: () => 1 },
+          ]} />
+        </Col>
+        <Col s={4}>
+          <Side>
+            <Kpi label="Total spent" display={rupee(spent)} delta={trend(done, (b) => b.price)} data={series('day', done, (b) => b.price)} />
+            <Kpi label="Active now" value={live.length} delta={trend(mine, () => 1, created)} data={series('day', mine, () => 1, created)} kind="bars" color={PALETTE[2]} />
+            <BigKpi label="All bookings" value={mine.length} delta={trend(mine, () => 1, created)} data={series('week', mine, () => 1, created)}
+              text="Every service you have requested on Clickit, including completed and cancelled ones." />
+          </Side>
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={5}>
+          <DCard title="Needs your attention" sub="Payments to make and bookings in progress.">
+            {!due.length && !live.length ? <div className="dempty">You are all caught up. Book a service to get started.</div> : (
+              <ul className="dattn">
+                {due.map((b) => (
+                  <li key={'due' + b.id}><span className="ni"><Icon name="wallet" size={18} /></span>
+                    <div><b>Pay {inr(b.price)} for {b.serviceName}</b><small>#{b.id} · payment due</small></div>
+                    <button className="btn sm" onClick={() => go('orders')}>Pay now</button></li>))}
+                {live.map((b) => (
+                  <li key={b.id}><span className="ni"><Icon name={b.icon} size={18} /></span>
+                    <div><b>{b.serviceName} <Badge s={b.status} /></b>
+                      <small>{b.status === 'requested' ? `Finding the nearest expert in ${b.city}…` : `Expert: ${db.staff.find((s) => s.id === b.staffId)?.name || 'assigned'}`}</small></div>
+                    <button className="btn ghost sm" onClick={() => go('orders')}>Track</button></li>))}
+              </ul>)}
+          </DCard>
+        </Col>
+        <Col s={7}>
+          <SplitCard title="Bookings by service" sub="Which services you book the most." data={countBy(mine, 'serviceName')} empty="Book your first service to see this." />
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={5}>
+          <TilesCard title="Highlights" sub="A quick summary of your account." tiles={[
+            { icon: 'check', label: 'Jobs completed', value: done.length },
+            { icon: 'clock', label: 'Hours of help', value: (Math.round(hours * 10) / 10).toString() },
+            { icon: 'rupee', label: 'Payment due', value: rupee(due.reduce((t, b) => t + b.price, 0)) },
+            { icon: 'wallet', label: 'Avg per booking', value: rupee(done.length ? Math.round(spent / done.length) : 0) },
+          ]} />
+          <RingsCard title="Progress" sub="How your bookings are going." rings={[
+            { label: 'Completed', pct: share(done.length, valid.length), value: `${done.length} of ${valid.length}` },
+            { label: 'Paid', pct: share(paid.length, done.length), value: `${paid.length} of ${done.length}` },
+          ]} />
+        </Col>
+        <Col s={7}>
+          <TableCard title="Recent bookings" sub="Your latest requests." head={['Service', 'Date', 'Location', 'Amount', 'Status']} empty="No bookings yet."
+            right={mine.length > 6 ? <button className="btn ghost sm" onClick={() => go('orders')}>View all</button> : null}
+            rows={mine.slice(0, 6).map((b) => [<span className="t"><Icon name={b.icon} size={16} />{b.serviceName}</span>, fmt(b.createdAt), `${b.area}, ${b.city}`, <b>{inr(b.price)}</b>, <Badge s={b.status} />])} />
+        </Col>
+      </DGrid>
     </>
   )
 }
@@ -107,7 +161,7 @@ function Book({ me, db, done }) {
       <div className="svc-pick">
         {db.services.filter((s) => s.active).map((s) => (
           <div key={s.id} className={'pick' + (svc?.id === s.id ? ' on' : '')} onClick={() => setSvc(s)}>
-            <img src={s.image || photoFor(s.icon)} alt={s.name} loading="lazy" />
+            <img src={s.image || photoFor(s.icon)} onError={imgFallback(photoFor(s.icon))} alt={s.name} loading="lazy" />
             <div className="tx"><h3><Icon name={s.icon} size={18} />{s.name}</h3><p>{s.desc}</p><b>{inr(s.price)} · {s.mins} min</b></div></div>))}
       </div>
       {svc && (

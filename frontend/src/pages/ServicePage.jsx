@@ -1,7 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import { Reveal, Steps, Reviews, FaqSection, Spotlight, CtaBand, useCities } from '../components/Site.jsx'
-import { SERVICE_PAGES, slug, cityImg, IMG } from '../content.js'
+import { SERVICE_PAGES, slug, cityImg, IMG, imgFallback } from '../content.js'
 
 const Trusted = () => (
   <div className="trusted"><div className="avs"><i>A</i><i>R</i><i>S</i></div><div><small>Trusted by</small><b>20K+ Homes</b></div>
@@ -109,7 +109,7 @@ export function CityPage() {
             {live ? <Link to="/user" className="btn glow fade-up d2">Book Now</Link> : <span className="btn" style={{ opacity: .6 }}>Coming Soon</span>}<br />
             <div className="fade-up d3"><Trusted /></div>
           </div>
-          <div className="pic scale-in d1"><img src={cityImg(name, 1200, db.image)} alt={name} /></div>
+          <div className="pic scale-in d1"><img src={cityImg(name, 1200, db.image)} onError={imgFallback(cityImg(name, 1200))} alt={name} /></div>
         </section>
       </div>
       <Strip />

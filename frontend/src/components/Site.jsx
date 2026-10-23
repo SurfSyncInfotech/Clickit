@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import Icon, { Stars } from './Icon.jsx'
-import { SERVICE_LINKS, CITIES, slug, cityImg, REVIEWS, FAQS, SERVICE_PHOTO, IMG } from '../content.js'
+import { SERVICE_LINKS, CITIES, slug, cityImg, REVIEWS, FAQS, SERVICE_PHOTO, IMG, imgFallback } from '../content.js'
 import { useDB, inr } from '../store.js'
 import { Count } from './Charts.jsx'
 
@@ -81,7 +81,7 @@ export function Footer() {
           <div><h4>Pages</h4><Link to="/about">About Us</Link><Link to="/blog">Blog</Link><Link to="/staff">Join as Expert</Link><Link to="/legal/terms-and-conditions">Terms & Conditions</Link><Link to="/legal/privacy-policy">Privacy Policy</Link><Link to="/legal/refund-and-cancellation">Refund & Cancellation</Link></div>
           <div><h4>Contact</h4><a href="mailto:help@clickit.com">help@clickit.com</a><h4 style={{ marginTop: 22 }}>Address</h4><span style={{ fontSize: 15 }}>Clickit Technologies,<br />Andheri East, Mumbai</span></div>
           <div><h4>Socials</h4><div className="socials"><a href="#" aria-label="Facebook"><Icon name="facebook" size={18} /></a><a href="#" aria-label="Instagram"><Icon name="instagram" size={18} /></a><a href="#" aria-label="X"><Icon name="x" size={18} /></a></div>
-            <h4 style={{ marginTop: 22 }}>Panels</h4><Link to="/user">User login</Link><Link to="/staff">Staff login</Link><Link to="/superadmin">Admin login</Link></div>
+            <h4 style={{ marginTop: 22 }}>Panels</h4><Link to="/user">User login</Link><Link to="/staff">Staff login</Link><Link to="/superadmin">Admin login</Link><Link to="/team">Team login</Link></div>
         </div>
         <div className="copy">© 2026 Clickit Technologies Pvt. Ltd. All rights reserved.</div>
       </div>
@@ -179,7 +179,7 @@ export function CityGrid() {
     <div className="city-grid">
       {cities.map((c, i) => (
         <Reveal key={c.id} delay={(i % 3) * 90} as={Link} to={`/house-help/${slug(c.name)}`} className="city">
-          <img src={cityImg(c.name, 700, c.image)} alt={c.name} loading="lazy" />{c.enabled && <em className="live" style={{ fontStyle: 'normal' }}>Live now</em>}<span>{c.name}</span>
+          <img src={cityImg(c.name, 700, c.image)} onError={imgFallback(cityImg(c.name, 700))} alt={c.name} loading="lazy" />{c.enabled && <em className="live" style={{ fontStyle: 'normal' }}>Live now</em>}<span>{c.name}</span>
         </Reveal>))}
     </div>
   )
@@ -222,7 +222,7 @@ export function ServiceCards() {
   return (
     <div className="pgrid">{list.map((s, i) => (
       <Reveal key={s.id} delay={(i % 4) * 80} as={Link} to="/user" className="pcard">
-        <div className="im"><img src={s.image || (SERVICE_PHOTO[s.icon] || IMG.clean1)(700)} alt={s.name} loading="lazy" /></div>
+        <div className="im"><img src={s.image || (SERVICE_PHOTO[s.icon] || IMG.clean1)(700)} onError={imgFallback((SERVICE_PHOTO[s.icon] || IMG.clean1)(700))} alt={s.name} loading="lazy" /></div>
         <div className="tx"><h3><Icon name={s.icon} size={20} />{s.name}</h3><p>{s.desc}</p><b>From {inr(s.price)} · {s.mins} min</b></div>
       </Reveal>))}</div>
   )

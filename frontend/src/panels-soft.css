@@ -1,0 +1,104 @@
+/* =====================================================================
+   SOFT THEME for the three dashboards — calmer, lighter, pastel accents.
+   Scoped to .panel so the public website keeps its own look. Loaded last.
+   ===================================================================== */
+.panel {
+  --soft: #f5f6fb; --line: #e9ebf3; --mute: #6f7689; --head: #2b2f3e;
+  --pink: #f4458d; --pink-dark: #e03379; --tint: #fff2f8; --tint2: #fde4ef;
+  --card-shadow: 0 1px 2px rgba(35, 44, 90, .04), 0 8px 24px rgba(35, 44, 90, .05);
+  background: var(--soft);
+}
+
+/* ---------- sidebar ---------- */
+.panel .side { background: #fff }
+.panel .side nav button { color: #5f6679; font-weight: 600 }
+.panel .side nav button:hover { background: #f4f5fa }
+.panel .side nav button.on { background: linear-gradient(90deg, #ffeaf3, #fff6fa); color: #e0357f; box-shadow: none }
+.panel .side nav button.on .ic { color: #e0357f }
+.panel .side nav button .chip { background: #ffe1ee; color: #e0357f }
+.me-av { background: #ffe6f1; color: #e0357f }
+
+/* ---------- hero header (dashboards) ---------- */
+.hero-card {
+  position: relative; overflow: hidden; align-items: center !important;
+  background: linear-gradient(115deg, #ffffff 0%, #fff3f8 52%, #f1efff 100%);
+  border: 1px solid #f4e4ec; border-radius: 22px; padding: 26px 30px; margin-bottom: 22px; box-shadow: var(--card-shadow);
+}
+.hero-card::before, .hero-card::after { content: ''; position: absolute; border-radius: 50%; pointer-events: none }
+.hero-card::before { width: 220px; height: 220px; right: -60px; top: -90px; background: radial-gradient(circle, rgba(244, 69, 141, .13), rgba(244, 69, 141, 0) 70%) }
+.hero-card::after { width: 200px; height: 200px; right: 160px; bottom: -120px; background: radial-gradient(circle, rgba(124, 92, 224, .12), rgba(124, 92, 224, 0) 70%) }
+.hero-card > * { position: relative; z-index: 1 }
+.hero-card h1 { font-size: 26px }
+.hero-card .lead, .topbar.hero-card .lead { margin: 4px 0 0 }
+
+/* ---------- stat cards: pastel icon tiles ---------- */
+.panel .stat { border-color: var(--line); box-shadow: var(--card-shadow); background: #fff }
+.panel .stat:hover { box-shadow: 0 2px 4px rgba(35, 44, 90, .05), 0 14px 30px rgba(35, 44, 90, .08) }
+.panel .stat small { color: var(--mute); font-weight: 600 }
+.panel .stat b { color: var(--head) }
+.stat .si { background: #ffe9f2; color: #e0488d }
+.stats .stat:nth-child(5n+2) .si { background: #e9f1ff; color: #4a79d8 }
+.stats .stat:nth-child(5n+3) .si { background: #e6f6ee; color: #2c9a67 }
+.stats .stat:nth-child(5n+4) .si { background: #fff3de; color: #cf8416 }
+.stats .stat:nth-child(5n+5) .si { background: #efe9ff; color: #7757d9 }
+
+/* ---------- cards ---------- */
+.panel .box, .panel .job, .panel .scard, .panel .pick { border-color: var(--line); box-shadow: var(--card-shadow) }
+.panel .box h3 { color: var(--head) }
+.panel .box:not(.approvals):not(.empty) > h3:first-child { display: flex; align-items: center; gap: 10px }
+.panel .box:not(.approvals):not(.empty) > h3:first-child::before { content: ''; width: 4px; height: 16px; border-radius: 4px; background: linear-gradient(180deg, #fb7cb0, #f4458d) }
+.panel .approvals { background: linear-gradient(135deg, #fff, #fff6fa); border-color: #f7dde9 }
+.panel .arow { border-top-color: #f7dde9 }
+.panel .hb-track { background: #f0f1f7 }
+.panel .legend li { border-bottom-color: #eef0f6 }
+.panel .fbrow { border-bottom-color: #eef0f6 }
+.panel .empty { color: #8a90a2 }
+
+/* ---------- buttons (calmer) ---------- */
+.panel .btn:not(.ghost):not(.ok):not(.bad) { background: linear-gradient(135deg, #f8639f, #f4458d); box-shadow: 0 4px 12px rgba(244, 69, 141, .22) }
+.panel .btn:not(.ghost):not(.ok):not(.bad):hover { background: linear-gradient(135deg, #f4528f, #e83a82) }
+.panel .btn.glow { animation: none }
+.panel .btn.glow::after { display: none }
+.panel .btn.ok { background: #27b27a; box-shadow: 0 4px 12px rgba(39, 178, 122, .2) }
+.panel .btn.bad { background: #ef6a6a; box-shadow: 0 4px 12px rgba(239, 106, 106, .2) }
+.panel .btn.ghost { background: #fff; color: #e0357f; border-color: #f6d8e6; box-shadow: none }
+.panel .btn.ghost:hover { background: #fff5f9 }
+.panel .btn:disabled { box-shadow: none }
+.panel .tabs { background: #eff0f6 }
+.panel .tabs button.on { color: #e0357f }
+
+/* ---------- tables + badges ---------- */
+.panel th { color: #8a90a2; background: transparent }
+.panel td { border-bottom-color: #f1f2f7 }
+.panel tbody tr:hover td { background: #fafbfe }
+.panel .badge { font-weight: 600 }
+.panel .b-pending, .panel .b-requested, .panel .b-unpaid { background: #fff4dc; color: #b87510 }
+.panel .b-approved, .panel .b-completed, .panel .b-paid { background: #e3f6ec; color: #228a5a }
+.panel .b-rejected, .panel .b-cancelled { background: #fde6e6; color: #c24848 }
+.panel .b-accepted, .panel .b-in_progress { background: #e5eeff; color: #3f6bc9 }
+.panel .chip { background: #fff0f6; color: #e0357f }
+
+/* ---------- misc ---------- */
+.panel .online-pill { box-shadow: var(--card-shadow) }
+.panel .bell { box-shadow: 0 1px 2px rgba(35, 44, 90, .05) }
+.panel .pick.on { border-color: #f4458d; box-shadow: 0 0 0 4px #fde4ef }
+.panel .paybox, .panel .arrival { border-color: #f7dde9; background: linear-gradient(135deg, #fff, #fff6fa) }
+.panel .pm.on { border-color: #f4458d; box-shadow: 0 0 0 4px #fde4ef }
+.panel .switch.on { background: #27b27a }
+.panel input:focus, .panel select:focus, .panel textarea:focus { border-color: #f4458d; box-shadow: 0 0 0 3px #fde4ef }
+
+@media (max-width: 900px) {
+  .hero-card { padding: 18px; border-radius: 18px }
+  .hero-card h1 { font-size: 22px }
+}
+
+/* ---------- compact "needs your attention" list (user dashboard) ---------- */
+.attn { padding: 18px 22px 8px }
+.attn-list { max-height: 320px; overflow-y: auto; margin: 0 -22px; padding: 0 22px }
+.arow2 { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-top: 1px solid #f0f1f7 }
+.arow2:first-child { border-top: 0; padding-top: 4px }
+.arow2 > div { flex: 1; min-width: 0 }
+.arow2 b { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; color: var(--head) }
+.arow2 small { display: block; color: var(--mute); font-size: 13px; margin-top: 2px }
+.arow2 .ni { background: #ffe9f2; color: #e0488d }
+.arow2 .btn { flex-shrink: 0 }

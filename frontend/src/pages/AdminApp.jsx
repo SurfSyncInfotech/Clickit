@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useDB, api, session, ready, MENUS, PERMS, inr, fmt, STAFF_SHARE } from '../store.js'
 import { AuthShell, PanelLayout, Badge, Photos, Modal, ImageField, useMsg } from '../components/Shared.jsx'
 import Icon, { Stars } from '../components/Icon.jsx'
-import { Count, BarChart, LineChart, Donut, HBars, lastDays, countBy, avg } from '../components/Charts.jsx'
-import { IMG, SERVICE_PHOTO, cityImg } from '../content.js'
+import { Count, HBars, PALETTE, countBy, avg } from '../components/Charts.jsx'
+import { DashHead, DashActions, DGrid, Col, Side, MetricCard, Kpi, BigKpi, ListCard, SplitCard, TilesCard, RingsCard, TableCard, series, trend, rupee, share } from '../components/Analytics.jsx'
+import { IMG, SERVICE_PHOTO, cityImg, imgFallback } from '../content.js'
 
 const ICONS = { dashboard: 'grid', staff: 'users', customers: 'user', bookings: 'list', cities: 'map', services: 'tools', settlements: 'wallet', feedback: 'star', users: 'lock' }
 const SVC_ICONS = ['broom', 'dishes', 'kitchen', 'bath', 'dust', 'fan', 'cook', 'laundry', 'sparkle']
@@ -15,30 +17,53 @@ const PayBadge = ({ b }) => b.status !== 'completed' ? <span style={{ color: 'va
   : b.paymentStatus === 'paid' ? <span className="badge b-paid">Paid · {b.paymentMethod === 'upi' ? 'UPI' : 'Cash'}</span> : <span className="badge b-unpaid">Awaiting payment</span>
 const photoFor = (s, w = 600) => s.image || (SERVICE_PHOTO[s.icon] || IMG.clean1)(w)
 
-export default function AdminApp() {
+// mode 'super' = /superadmin (Superadmin only) · mode 'team' = /team (Admin, Account Manager, City Manager, Support)
+export default function AdminApp({ mode = 'super' }) {
+  const team = mode === 'team'
   const [id, setId] = useState(() => session.get('admin')?.id)
   const db = useDB()
   const me = db.admins.find((a) => a.id === id)
   const [f, setF] = useState({ email: '', password: '' }); const [err, setErr] = useState('')
+  const logout = () => { session.clear('admin'); setId(null) }
   if (id && !ready('admin')) return <div className="empty">Loading…</div>
   if (!me) {
     return (
-      <AuthShell title="Admin login" art="Your control room" sub="Approve staff, manage cities and services, and grant access to your team." image={IMG.heroB(1200)}
-        bullets={['Approve or reject registrations', 'Permissions by menu and city', 'Live charts and weekly settlements']}
-        floats={[{ icon: 'users', title: 'New staff request', sub: 'Waiting for approval' }, { icon: 'wallet', title: 'Weekly settlement', sub: 'Ready to run' }, { icon: 'star', title: '4.8 average rating', sub: 'This week' }]}>
-        <p className="sub">Sign in with your admin mail id</p>
+      <AuthShell title={team ? 'Team login' : 'Admin login'}
+        art={team ? 'Your team workspace' : 'Your control room'}
+        sub={team ? 'Sign in with the mail id and password your super admin created for you.' : 'Approve staff, manage cities and services, and grant access to your team.'}
+        image={team ? IMG.clean2(1200) : IMG.heroB(1200)}
+        bullets={team ? ['See only the menus you were given', 'Work within your assigned cities', 'Live dashboards for your role'] : ['Approve or reject registrations', 'Permissions by menu and city', 'Live charts and weekly settlements']}
+        floats={team
+          ? [{ icon: 'lock', title: 'Role based access', sub: 'Menus, permissions, cities' }, { icon: 'list', title: 'Bookings at a glance', sub: 'For your cities' }, { icon: 'star', title: 'Customer feedback', sub: 'Always in view' }]
+          : [{ icon: 'users', title: 'New staff request', sub: 'Waiting for approval' }, { icon: 'wallet', title: 'Weekly settlement', sub: 'Ready to run' }, { icon: 'star', title: '4.8 average rating', sub: 'This week' }]}>
+        <p className="sub">{team ? 'For Admin, Account Manager, City Manager and Support users' : 'Sign in with your super admin mail id'}</p>
         <form onSubmit={async (e) => { e.preventDefault(); setErr(''); try { setId((await api.adminLogin(f.email, f.password)).id) } catch (x) { setErr(x.message) } }}>
           <label>Mail id</label><input required type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
           <label>Password</label><input required type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
           {err && <div className="err">{err}</div>}
           <button className="btn glow" style={{ width: '100%', marginTop: 20 }}>Log in</button>
         </form>
+        <p className="demo">{team ? <>Are you the super admin? <Link to="/superadmin" style={{ color: 'var(--pink)', fontWeight: 700 }}>Use the Admin login</Link>.</> : <>Team member (Admin, Account Manager, City Manager, Support)? <Link to="/team" style={{ color: 'var(--pink)', fontWeight: 700 }}>Use the Team login</Link>.</>}</p>
       </AuthShell>)
   }
-  return <AdminPanel me={me} db={db} onLogout={() => { session.clear('admin'); setId(null) }} />
+  // an account signed in on the wrong entry point: send it to its own login instead of mixing the two
+  if ((me.role === 'Superadmin') === team) {
+    return (
+      <div className="auth-form" style={{ minHeight: '100vh', background: 'var(--soft)' }}>
+        <div className="box" style={{ maxWidth: 460, textAlign: 'center' }}>
+          <div style={{ color: 'var(--pink)', display: 'grid', placeItems: 'center', marginBottom: 10 }}><Icon name="lock" size={48} /></div>
+          <h2>{team ? 'This is the super admin account' : `This is a ${me.role} account`}</h2>
+          <p style={{ color: 'var(--mute)', margin: '10px 0 20px' }}>{team ? 'Super admins sign in on the Admin login page.' : 'Team members sign in on the Team login page.'}</p>
+          <div className="actions" style={{ justifyContent: 'center' }}>
+            <Link className="btn" to={team ? '/superadmin' : '/team'} onClick={logout}>{team ? 'Go to Admin login' : 'Go to Team login'}</Link>
+            <button className="btn ghost" onClick={logout}>Log out</button></div>
+        </div>
+      </div>)
+  }
+  return <AdminPanel me={me} db={db} onLogout={logout} team={team} />
 }
 
-function AdminPanel({ me, db, onLogout }) {
+function AdminPanel({ me, db, onLogout, team }) {
   const menus = MENUS.filter((m) => me.role === 'Superadmin' || me.menus.includes(m.key))
   const [tab, setTab] = useState(menus[0]?.key)
   const pendingStaff = menus.some((m) => m.key === 'staff') ? db.staff.filter((s) => s.status === 'pending').length : 0
@@ -46,6 +71,7 @@ function AdminPanel({ me, db, onLogout }) {
   const P = { me, db, go: setTab }
   return (
     <PanelLayout role={me.role === 'Superadmin' ? 'Super admin' : me.role} items={items} active={tab} onNav={setTab} me={{ name: me.name, sub: me.email }} onLogout={onLogout}>
+      {!menus.length && <div className="box empty">No menus have been assigned to your account yet. Ask the super admin to give you access.</div>}
       {tab === 'dashboard' && <Dashboard {...P} />}
       {tab === 'staff' && <StaffTab {...P} />}
       {tab === 'customers' && <CustomersTab {...P} />}
@@ -59,35 +85,56 @@ function AdminPanel({ me, db, onLogout }) {
   )
 }
 
-const Head = ({ t, s, children }) => <div className="topbar"><div><h1>{t}</h1><p className="lead">{s}</p></div><div className="actions">{children}</div></div>
+const Head = ({ t, s, hero, children }) => <div className={'topbar' + (hero ? ' hero-card' : '')}><div><h1>{t}</h1><p className="lead">{s}</p></div><div className="actions">{children}</div></div>
 const Table = ({ head, rows, empty }) => !rows.length ? <div className="box empty">{empty}</div> :
   <div className="box tablewrap"><table><thead><tr>{head.map((h) => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} data-label={head[j]}>{c}</td>)}</tr>)}</tbody></table></div>
 const Stat = ({ icon, label, children, tone }) => (
   <div className={'stat ' + (tone || '')}><span className="si"><Icon name={icon} size={20} /></span><small>{label}</small><b>{children}</b></div>)
 
 // ================= DASHBOARD =================
+function exportCsv(rows) {
+  const head = ['ID', 'Service', 'City', 'Area', 'Customer', 'Staff', 'Price', 'Status', 'Payment', 'Created']
+  const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
+  const body = rows.map((b) => [b.id, b.serviceName, b.city, b.area, b.customerName, b.staffId || '', b.price, b.status, b.paymentStatus, b.createdAt].map(esc).join(','))
+  const url = URL.createObjectURL(new Blob([[head.join(','), ...body].join('\n')], { type: 'text/csv' }))
+  const a = document.createElement('a'); a.href = url; a.download = 'clickit-bookings.csv'; a.click(); URL.revokeObjectURL(url)
+}
+
 function Dashboard({ db, me, go }) {
-  const done = db.bookings.filter((b) => b.status === 'completed')
+  const [city, setCity] = useState('all')
+  const has = (m) => me.role === 'Superadmin' || me.menus.includes(m)
+  const myCities = db.cities.filter((c) => me.role === 'Superadmin' || me.cities.includes('*') || me.cities.includes(c.name))
+  const bookings = db.bookings.filter((b) => city === 'all' || b.city === city)
+  const staff = db.staff.filter((s) => city === 'all' || s.city === city)
+  const approved = staff.filter((s) => s.status === 'approved')
+  const feedback = db.feedback.filter((f) => city === 'all' || staff.some((s) => s.id === f.staffId))
+  const done = bookings.filter((b) => b.status === 'completed')
   const paid = done.filter((b) => b.paymentStatus === 'paid')
   const unpaid = done.filter((b) => b.paymentStatus !== 'paid')
+  const cancelled = bookings.filter((b) => b.status === 'cancelled')
+  const open = bookings.filter((b) => b.status === 'requested')
+  const ratings = feedback.map((f) => f.rating)
+  const pending = has('staff') ? db.staff.filter((s) => s.status === 'pending') : []
+  const created = (b) => b.createdAt
+  const paidAt = (b) => b.paidAt || b.completedAt
   const revenue = paid.reduce((t, b) => t + b.price, 0)
-  const ratings = db.feedback.map((f) => f.rating)
-  const hasStaffMenu = me.role === 'Superadmin' || me.menus.includes('staff')
-  const pending = hasStaffMenu ? db.staff.filter((s) => s.status === 'pending') : []
-  const byStatus = countBy(db.bookings, 'status').map((x) => ({ ...x, label: x.label.replace('_', ' ') }))
-  const staffRank = db.staff.filter((s) => s.status === 'approved').map((s) => ({ label: s.name, value: done.filter((b) => b.staffId === s.id).length })).sort((a, b) => b.value - a.value).slice(0, 5)
+  const byStatus = countBy(bookings, 'status').map((x) => ({ ...x, label: x.label.replace('_', ' ') }))
+  const services = countBy(bookings, 'serviceName').slice(0, 5)
+  const cityRows = countBy(bookings, 'city').map((c) => ({ city: c.label, n: c.value, done: done.filter((b) => b.city === c.label).length, rev: paid.filter((b) => b.city === c.label).reduce((t, b) => t + b.price, 0) }))
+  const staffRank = approved.map((s) => ({ s, n: done.filter((b) => b.staffId === s.id).length })).sort((a, b) => b.n - a.n).slice(0, 5)
+  const today = new Date(), from = new Date(); from.setDate(from.getDate() - 6)
+  const d = (x) => x.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   return (
     <>
-      <Head t={`Hello, ${me.name}`} s="Here is what is happening on Clickit today." />
-      <div className="stats">
-        <Stat icon="wallet" label="Payments received"><Count value={revenue} prefix="₹" /></Stat>
-        <Stat icon="rupee" label="Awaiting payment"><Count value={unpaid.reduce((t, b) => t + b.price, 0)} prefix="₹" /></Stat>
-        <Stat icon="list" label="Total bookings"><Count value={db.bookings.length} /></Stat>
-        <Stat icon="clock" label="Open requests"><Count value={db.bookings.filter((b) => b.status === 'requested').length} /></Stat>
-        <Stat icon="users" label="Active staff"><Count value={db.staff.filter((s) => s.status === 'approved').length} /></Stat>
-        <Stat icon="user" label="Customers"><Count value={db.customers.length} /></Stat>
-        <Stat icon="star" label="Avg rating"><Count value={avg(ratings)} decimals={1} /></Stat>
-      </div>
+      <DashHead title={`Hi, ${me.name}!`} sub="Here is what is happening on Clickit today."
+        meta={[{ label: 'Start date', value: d(from) }, { label: 'End date', value: d(today) }]}>
+        <div className="dmeta"><small>City</small>
+          <select value={city} onChange={(e) => setCity(e.target.value)} aria-label="Filter by city"><option value="all">All cities</option>{myCities.map((c) => <option key={c.id}>{c.name}</option>)}</select></div>
+      </DashHead>
+      <DashActions>
+        <button className="da" onClick={() => exportCsv(bookings)}><Icon name="upload" size={16} />Export CSV</button>
+        <button className="da" onClick={() => window.print()}><Icon name="list" size={16} />Print / PDF</button>
+      </DashActions>
 
       {pending.length > 0 && (
         <div className="box approvals">
@@ -101,23 +148,78 @@ function Dashboard({ db, me, go }) {
             </div>))}
         </div>)}
 
-      <div className="gridc">
-        <div className="box"><h3>Bookings, last 7 days</h3><BarChart data={lastDays(7, db.bookings, () => 1, (b) => b.createdAt)} /></div>
-        <div className="box"><h3>Payments received, last 7 days</h3><LineChart data={lastDays(7, paid, (b) => b.price, (b) => b.paidAt || b.completedAt)} format={(v) => '₹' + v} /></div>
-        <div className="box"><h3>Bookings by status</h3><Donut data={byStatus} /></div>
-        <div className="box"><h3>Payment method</h3>{paid.length ? <Donut data={countBy(paid, (b) => (b.paymentMethod === 'upi' ? 'UPI' : 'Cash'))} /> : <div className="empty">No payments yet.</div>}</div>
-        <div className="box"><h3>Top cities</h3><HBars data={countBy(db.bookings, 'city')} /></div>
-        <div className="box"><h3>Popular services</h3><HBars data={countBy(db.bookings, 'serviceName').slice(0, 6)} /></div>
-        <div className="box"><h3>Staff leaderboard (jobs done)</h3><HBars data={staffRank} /></div>
-      </div>
+      <DGrid>
+        <Col s={8}>
+          <MetricCard title="Bookings & revenue" sub="Platform activity. Click a number to change the chart; the dashed line is the previous period." metrics={[
+            { key: 'b', label: 'Bookings', list: bookings, pick: () => 1, when: created },
+            { key: 'r', label: 'Revenue', list: paid, pick: (b) => b.price, when: paidAt, format: rupee, prefix: '₹' },
+            { key: 'c', label: 'Completed', list: done, pick: () => 1 },
+            { key: 'x', label: 'Cancelled', list: cancelled, pick: () => 1, when: created },
+          ]} />
+        </Col>
+        <Col s={4}>
+          <Side>
+            <Kpi label="Payments received" display={rupee(revenue)} delta={trend(paid, (b) => b.price, paidAt)} data={series('day', paid, (b) => b.price, paidAt)} />
+            <Kpi label="Awaiting payment" display={rupee(unpaid.reduce((t, b) => t + b.price, 0))} delta={trend(unpaid, (b) => b.price)} data={series('day', unpaid, (b) => b.price)} kind="bars" color={PALETTE[3]} />
+            <BigKpi label="All bookings" value={bookings.length} delta={trend(bookings, () => 1, created)} data={series('week', bookings, () => 1, created)}
+              text="Every booking request received, including open, completed and cancelled ones." />
+          </Side>
+        </Col>
+      </DGrid>
 
-      <div className="gridc">
-        <div className="box"><h3>Latest bookings</h3>
-          <Table empty="No bookings yet." head={['ID', 'Service', 'City', 'Status']} rows={db.bookings.slice(0, 6).map((b) => [b.id, b.serviceName, b.city, <Badge s={b.status} />])} /></div>
-        <div className="box"><h3>Latest feedback</h3>
-          {!db.feedback.length && <div className="empty">No feedback yet.</div>}
-          {db.feedback.slice(0, 5).map((f) => <div key={f.id} className="fbrow"><Stars n={f.rating} size={14} /><p>{f.comment || 'No comment'}</p><small>{f.customerName} for {db.staff.find((s) => s.id === f.staffId)?.name || 'staff'}</small></div>)}</div>
-      </div>
+      <DGrid>
+        <Col s={5}>
+          <ListCard title="Top services" sub="Most booked services and the payments they brought in." empty="No bookings yet." rows={services.map((s) => ({
+            key: s.label, title: s.label, sub: `${rupee(paid.filter((b) => b.serviceName === s.label).reduce((t, b) => t + b.price, 0))} received`, value: s.value, share: share(s.value, bookings.length) }))} />
+        </Col>
+        <Col s={7}>
+          <SplitCard title="Bookings by status" sub="Where every request currently stands." data={byStatus} empty="No bookings yet." />
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={5}>
+          <TilesCard title="Overview" sub="People and demand on the platform." tiles={[
+            { icon: 'user', label: 'Customers', value: has('customers') ? db.customers.length : '—' },
+            { icon: 'users', label: 'Active staff', value: approved.length },
+            { icon: 'clock', label: 'Open requests', value: open.length },
+            { icon: 'star', label: 'Avg rating', value: ratings.length ? avg(ratings).toFixed(1) : '0.0' },
+          ]} />
+          <RingsCard title="Health" sub="Quick signals for the team." rings={[
+            { label: 'Completion rate', pct: share(done.length, bookings.length - cancelled.length), value: `${done.length} done` },
+            { label: 'Payments collected', pct: share(paid.length, done.length), value: `${paid.length} of ${done.length}` },
+            { label: 'Staff online', pct: share(approved.filter((s) => s.online).length, approved.length), value: `${approved.filter((s) => s.online).length} of ${approved.length}` },
+          ]} />
+        </Col>
+        <Col s={7}>
+          <TableCard title="Top cities" sub="Demand and revenue by city." head={['City', 'Bookings', 'Share', 'Completed', 'Revenue']} empty="No bookings yet."
+            rows={cityRows.map((c) => [<b>{c.city}</b>, c.n, share(c.n, bookings.length) + '%', c.done, rupee(c.rev)])} />
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={7}>
+          <TableCard title="Latest bookings" sub="The most recent requests." head={['ID', 'Service', 'City', 'Amount', 'Status']} empty="No bookings yet."
+            right={bookings.length > 6 ? <button className="btn ghost sm" onClick={() => go('bookings')}>View all</button> : null}
+            rows={bookings.slice(0, 6).map((b) => [b.id, <span className="t"><Icon name={b.icon} size={16} />{b.serviceName}</span>, b.city, <b>{inr(b.price)}</b>, <Badge s={b.status} />])} />
+        </Col>
+        <Col s={5}>
+          {has('feedback')
+            ? <ListCard title="Latest feedback" sub="Customer ratings for staff." empty="No feedback yet." rows={feedback.slice(0, 5).map((f) => ({
+              key: f.id, title: f.customerName, sub: `${f.comment || 'No comment'} · for ${db.staff.find((s) => s.id === f.staffId)?.name || 'staff'}`, value: '★ ' + f.rating }))} />
+            : <ListCard title="Open requests" sub="Waiting for an expert." empty="No open requests." rows={open.slice(0, 5).map((b) => ({ key: b.id, title: b.serviceName, sub: `${b.area}, ${b.city}`, value: inr(b.price) }))} />}
+        </Col>
+      </DGrid>
+
+      <DGrid>
+        <Col s={6}>
+          <ListCard title="Staff leaderboard" sub="Top experts by completed jobs." empty="No approved staff yet." rows={staffRank.map((x) => ({
+            key: x.s.id, title: x.s.name, sub: `${x.s.city} · ${x.s.area}`, value: x.n, share: share(x.n, done.length) }))} />
+        </Col>
+        <Col s={6}>
+          <SplitCard title="Payment method" sub="How customers pay once a job is done." data={countBy(paid, (b) => (b.paymentMethod === 'upi' ? 'UPI' : 'Cash'))} empty="No payments yet." />
+        </Col>
+      </DGrid>
     </>
   )
 }
@@ -226,7 +328,7 @@ function CitiesTab({ db, me }) {
       <Head t="Cities & areas" s="Cities appear on the website. Enable a city to open bookings there.">{ok && <button className="btn sm" onClick={() => setForm({ name: '', image: null })}><Icon name="plus" size={16} />Add city</button>}</Head>
       <div className="cgrid">{db.cities.map((c) => (
         <div className="box citybox" key={c.id}>
-          <div className="cimg"><img src={c.image || cityImg(c.name, 600)} alt={c.name} /><span className={'badge b-' + (c.enabled ? 'approved' : 'pending')}>{c.enabled ? 'Live' : 'Disabled'}</span></div>
+          <div className="cimg"><img src={c.image || cityImg(c.name, 600)} onError={imgFallback(cityImg(c.name, 600))} alt={c.name} /><span className={'badge b-' + (c.enabled ? 'approved' : 'pending')}>{c.enabled ? 'Live' : 'Disabled'}</span></div>
           <div className="topbar" style={{ margin: '12px 0 4px' }}><h3 style={{ margin: 0 }}>{c.name}</h3>
             <button disabled={!ok} className={'switch' + (c.enabled ? ' on' : '')} onClick={() => api.toggleCity(c.id)} aria-label="Toggle city" /></div>
           <div className="chips" style={{ margin: '10px 0' }}>{c.areas.map((a) => <span className="chip" key={a}>{a}{ok && <button onClick={() => api.removeArea(c.id, a)} aria-label="Remove area">×</button>}</span>)}</div>
@@ -264,7 +366,7 @@ function ServicesTab({ db, me }) {
       <Head t="Services" s="Add, edit or remove services. Active services appear on the website and in the booking screen.">{ok && <button className="btn sm" onClick={() => setEdit({ name: '', icon: 'broom', desc: '', price: 99, mins: 30, image: null, active: true })}><Icon name="plus" size={16} />Add service</button>}</Head>
       <div className="sgrid">{db.services.map((s) => (
         <div key={s.id} className={'scard' + (s.active ? '' : ' off')}>
-          <div className="simg"><img src={photoFor(s)} alt={s.name} loading="lazy" />{!s.active && <span className="badge b-cancelled">Hidden</span>}</div>
+          <div className="simg"><img src={photoFor(s)} onError={imgFallback(photoFor({ icon: s.icon }))} alt={s.name} loading="lazy" />{!s.active && <span className="badge b-cancelled">Hidden</span>}</div>
           <div className="stx"><h3 className="t"><Icon name={s.icon} size={18} />{s.name}</h3><p>{s.desc || 'No description'}</p><b>{inr(s.price)} · {s.mins} min</b>
             {ok && <div className="actions" style={{ marginTop: 10 }}>
               <button className={'switch' + (s.active ? ' on' : '')} onClick={() => api.saveService({ ...s, active: !s.active })} aria-label="Toggle" />
@@ -335,6 +437,11 @@ function UsersTab({ db, me }) {
   return (
     <>
       <Head t="Users & permissions" s="Create panel users with their own mail id and password, and tick exactly what they can access.">{sup && <button className="btn sm" onClick={() => setForm(blank)}><Icon name="plus" size={16} />Create user</button>}</Head>
+      <div className="box" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: '16px 20px' }}>
+        <span className="ni"><Icon name="lock" size={18} /></span>
+        <div style={{ flex: 1, minWidth: 220 }}><b>Team login page</b></div>
+        <button className="btn ghost sm" onClick={() => navigator.clipboard?.writeText(location.origin + '/team')}>Copy link</button>
+        <a className="btn sm" href="/team" target="_blank" rel="noreferrer">Open</a></div>
       <Table empty="No users" head={['Name', 'Role', 'Mail id', 'Menus', 'Permissions', 'Cities', '']}
         rows={db.admins.map((a) => [<b>{a.name}</b>, a.role, a.email,
           a.role === 'Superadmin' ? 'All menus' : <div className="chips">{a.menus.map((m) => <span className="chip" key={m}>{m}</span>)}</div>,

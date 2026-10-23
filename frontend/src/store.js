@@ -24,7 +24,7 @@ const emit = () => listeners.forEach((l) => l())
 
 const pageRole = () => {
   const p = location.pathname
-  return p.startsWith('/superadmin') ? 'admin' : p.startsWith('/staff') ? 'staff' : p.startsWith('/user') ? 'user' : null
+  return p.startsWith('/superadmin') || p.startsWith('/team') ? 'admin' : p.startsWith('/staff') ? 'staff' : p.startsWith('/user') ? 'user' : null
 }
 
 export const session = {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 // Lightweight animated SVG charts (no dependency). Colours follow the brand pink.
-export const PALETTE = ['#f70f79', '#8b5cf6', '#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#6366f1']
+export const PALETTE = ['#f4709f', '#9b8afb', '#5eb1ef', '#f7b955', '#4fc79a', '#f58b8b', '#7f8cf0']
 
 // numbers that count up when they appear
 export function Count({ value, prefix = '', suffix = '', decimals = 0, duration = 900 }) {
@@ -26,19 +26,21 @@ export function Count({ value, prefix = '', suffix = '', decimals = 0, duration 
 const useMounted = () => { const [m, setM] = useState(false); useEffect(() => { const t = setTimeout(() => setM(true), 60); return () => clearTimeout(t) }, []); return m }
 
 // vertical bars: data = [{label, value}]
-export function BarChart({ data, height = 220, color = '#f70f79', format = (v) => v }) {
+export function BarChart({ data, height = 220, color = '#f4709f', format = (v) => v }) {
   const on = useMounted()
+  const gid = useRef('b' + Math.random().toString(36).slice(2, 7)).current
   const max = Math.max(1, ...data.map((d) => d.value))
   const W = 560, pad = { t: 24, r: 8, b: 30, l: 8 }, iw = W - pad.l - pad.r, ih = height - pad.t - pad.b
   const bw = Math.min(44, (iw / data.length) * 0.58)
   return (
     <svg viewBox={`0 0 ${W} ${height}`} width="100%" role="img" className="chart">
-      {[0, 0.5, 1].map((g) => <line key={g} x1={pad.l} x2={W - pad.r} y1={pad.t + ih * (1 - g)} y2={pad.t + ih * (1 - g)} stroke="#ececf1" strokeDasharray={g ? '4 4' : ''} />)}
+      <defs><linearGradient id={gid} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={color} /><stop offset="1" stopColor={color} stopOpacity=".55" /></linearGradient></defs>
+      {[0, 0.5, 1].map((g) => <line key={g} x1={pad.l} x2={W - pad.r} y1={pad.t + ih * (1 - g)} y2={pad.t + ih * (1 - g)} stroke="#eceef5" strokeDasharray={g ? '4 4' : ''} />)}
       {data.map((d, i) => {
         const x = pad.l + (iw / data.length) * (i + 0.5) - bw / 2, h = (d.value / max) * ih
         return (
           <g key={i}>
-            <rect x={x} y={pad.t + ih - h} width={bw} height={Math.max(h, 0)} rx="8" fill={color} opacity={d.value ? 1 : 0.15}
+            <rect x={x} y={pad.t + ih - h} width={bw} height={Math.max(h, 0)} rx="8" fill={`url(#${gid})`} opacity={d.value ? 1 : 0.15}
               style={{ transformOrigin: `${x + bw / 2}px ${pad.t + ih}px`, transform: on ? 'scaleY(1)' : 'scaleY(0)', transition: `transform .8s cubic-bezier(.2,.7,.2,1) ${i * 60}ms` }}>
               <title>{d.label}: {format(d.value)}</title></rect>
             {d.value > 0 && <text x={x + bw / 2} y={pad.t + ih - h - 6} textAnchor="middle" fontSize="11" fontWeight="700" fill="#303030" style={{ opacity: on ? 1 : 0, transition: `opacity .5s ${300 + i * 60}ms` }}>{format(d.value)}</text>}
@@ -50,7 +52,7 @@ export function BarChart({ data, height = 220, color = '#f70f79', format = (v) =
 }
 
 // smooth area/line chart
-export function LineChart({ data, height = 220, color = '#f70f79', format = (v) => v }) {
+export function LineChart({ data, height = 220, color = '#f4709f', format = (v) => v }) {
   const on = useMounted()
   const W = 560, pad = { t: 24, r: 16, b: 30, l: 16 }, iw = W - pad.l - pad.r, ih = height - pad.t - pad.b
   const max = Math.max(1, ...data.map((d) => d.value))
@@ -75,7 +77,7 @@ export function LineChart({ data, height = 220, color = '#f70f79', format = (v) 
 }
 
 // donut with legend: data = [{label, value}]
-export function Donut({ data, size = 170, center }) {
+export function Donut({ data, size = 170, center, noLegend }) {
   const on = useMounted()
   const total = data.reduce((t, d) => t + d.value, 0)
   const R = 62, C = 2 * Math.PI * R
@@ -93,7 +95,7 @@ export function Donut({ data, size = 170, center }) {
         <text x="85" y="82" textAnchor="middle" fontSize="26" fontWeight="800" fill="#303030">{center ?? total}</text>
         <text x="85" y="100" textAnchor="middle" fontSize="11" fill="#6b7280">total</text>
       </svg>
-      <ul className="legend">{data.map((d, i) => <li key={d.label}><i style={{ background: PALETTE[i % PALETTE.length] }} />{d.label}<b>{d.value}</b></li>)}</ul>
+      {!noLegend && <ul className="legend">{data.map((d, i) => <li key={d.label}><i style={{ background: PALETTE[i % PALETTE.length] }} />{d.label}<b>{d.value}</b></li>)}</ul>}
     </div>
   )
 }
